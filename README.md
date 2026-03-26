@@ -1,72 +1,43 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Flow Foundry</title>
-  <link rel="stylesheet" href="src/styles.css" />
-</head>
-<body>
-  <div class="app-shell">
-    <header class="topbar">
-      <div>
-        <h1>Flow Foundry</h1>
-        <p class="tagline">Rotate the system. Complete the flow.</p>
-      </div>
-      <button id="soundBtn" class="icon-btn" aria-label="Toggle sound">🔊</button>
-    </header>
+# Flow Foundry
 
-    <section class="hud card">
-      <div class="hud-item"><span>Level</span><strong id="levelLabel">1</strong></div>
-      <div class="hud-item"><span>Moves</span><strong id="movesLabel">0</strong></div>
-      <div class="hud-item"><span>Best</span><strong id="bestLabel">—</strong></div>
-      <div class="hud-item"><span>Stars</span><strong id="starsLabel">0</strong></div>
-    </section>
+Flow Foundry is a lightweight browser puzzle game where you rotate tiles to connect sources and receivers.
 
-    <main class="game-layout">
-      <section class="board-card card">
-        <div class="board-header">
-          <div>
-            <h2 id="levelTitle">Tutorial Flow</h2>
-            <p id="levelGoal">Connect the source to every receiver.</p>
-          </div>
-          <button id="playFlowBtn" class="secondary-btn">Test Flow</button>
-        </div>
-        <div id="board" class="board" aria-label="Game board"></div>
-      </section>
+## Play locally
 
-      <section class="controls card">
-        <button id="resetBtn">Reset</button>
-        <button id="hintBtn">Hint</button>
-        <button id="nextBtn" disabled>Next</button>
-      </section>
+Because this project is plain HTML/CSS/JS, you can run it with any static server.
 
-      <section class="levels-panel card">
-        <div class="levels-head">
-          <h3>Levels</h3>
-          <span id="progressLabel">1 / 20 unlocked</span>
-        </div>
-        <div id="levelGrid" class="level-grid"></div>
-      </section>
-    </main>
-  </div>
+### Option 1: Python
 
-  <div id="toast" class="toast"></div>
+```bash
+python3 -m http.server 8080
+```
 
-  <div id="winModal" class="modal hidden">
-    <div class="modal-card">
-      <h2>System Complete</h2>
-      <p id="winText">Great work.</p>
-      <div id="starDisplay" class="star-display"></div>
-      <div class="modal-actions">
-        <button id="winReplayBtn" class="secondary-btn">Replay</button>
-        <button id="winNextBtn">Next Level</button>
-      </div>
-    </div>
-  </div>
+Then open: `http://localhost:8080`
 
-  <script src="src/levels.js"></script>
-  <script src="src/audio.js"></script>
-  <script src="src/game.js"></script>
-</body>
-</html>
+### Option 2: Node
+
+```bash
+npx serve .
+```
+
+## Deploy on GitHub Pages
+
+This repo includes a GitHub Actions workflow at:
+
+- `.github/workflows/deploy-pages.yml`
+
+### One-time setup in GitHub
+
+1. Go to your repository **Settings → Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+3. Push to `main` (or `master`).
+
+After a push, GitHub Actions will deploy the site automatically.
+
+## Project structure
+
+- `index.html` – App shell
+- `src/styles.css` – Game styles
+- `src/game.js` – Core game logic
+- `src/levels.js` – Level definitions
+- `src/audio.js` – Sound effects
