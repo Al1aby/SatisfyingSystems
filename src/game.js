@@ -63,6 +63,7 @@
   let levelIndex = Math.min(state.currentLevel, LEVELS.length - 1);
   let boardState = [];
   let startBoardState = [];
+  let undoStack = [];
   let moveCount = 0;
   let solved = false;
 
@@ -119,6 +120,7 @@
 
   function resetLevel() {
     boardState = deepClone(startBoardState);
+    undoStack = [];
     moveCount = 0;
     solved = false;
     updateHud();
@@ -131,6 +133,7 @@
     const level = currentLevel();
     startBoardState = createInitialBoard(level);
     boardState = deepClone(startBoardState);
+    undoStack = [];
     moveCount = 0;
     solved = false;
     levelLabelEl.textContent = String(level.id);
@@ -246,12 +249,28 @@
     if (solved) return;
     const cell = boardState[y][x];
     if (cell.type === 'empty' || cell.type === 'cross') return;
+    undoStack.push({ x, y, prevRotation: cell.rotation });
     cell.rotation = (cell.rotation + 1) % 4;
     moveCount++;
     Sound.rotate();
     updateHud();
     renderBoard();
     autoCheckSolved();
+  }
+
+  function undoMove() {
+    if (solved) return;
+    const lastMove = undoStack.pop();
+    if (!lastMove) {
+      showToast('Nothing to undo yet.');
+      return;
+    }
+    const { x, y, prevRotation } = lastMove;
+    boardState[y][x].rotation = prevRotation;
+    moveCount = Math.max(0, moveCount - 1);
+    updateHud();
+    renderBoard();
+    showToast('Undid last rotation.');
   }
 
   function autoCheckSolved() {
@@ -369,6 +388,7 @@
 
   document.getElementById('resetBtn').addEventListener('click', resetLevel);
   document.getElementById('hintBtn').addEventListener('click', showHint);
+  document.getElementById('undoBtn').addEventListener('click', undoMove);
   document.getElementById('playFlowBtn').addEventListener('click', testFlow);
   document.getElementById('nextBtn').addEventListener('click', () => {
     if (levelIndex + 1 < state.unlocked && levelIndex + 1 < LEVELS.length) {
@@ -403,6 +423,18 @@
     Sound.toggle();
   }
   soundBtn.textContent = state.sound === false ? '🔇' : '🔊';
+  
+  document.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+    if (key === 'u') undoMove();
+    if (key === 'r') resetLevel();
+    if (key === 'h') showHint();
+    if (key === 't') testFlow();
+    if (key === 'n') {
+      const nextBtn = document.getElementById('nextBtn');
+      if (!nextBtn.disabled) nextBtn.click();
+    }
+  });
 
   loadLevel(levelIndex);
 })();
