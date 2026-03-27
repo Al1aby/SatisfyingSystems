@@ -66,6 +66,8 @@
   let undoStack = [];
   let moveCount = 0;
   let solved = false;
+  let justRotated = null;
+  let flowAnimating = false;
 
   function defaultSave() {
     return {
@@ -167,6 +169,7 @@
     const level = currentLevel();
     const queue = [level.source];
     const visited = new Set();
+    const visitOrder = [];
     let flowedSteps = 0;
 
     while (queue.length) {
@@ -176,6 +179,7 @@
       visited.add(key);
       const cell = boardState[y][x];
       cell.filled = true;
+      visitOrder.push([x, y]);
       flowedSteps++;
 
       for (const dir of connectionsFor(cell)) {
@@ -189,7 +193,7 @@
     }
 
     const allReceiversFilled = currentLevel().receivers.every(([x,y]) => boardState[y][x].filled);
-    return { allReceiversFilled, flowedSteps };
+    return { allReceiversFilled, flowedSteps, visitOrder };
   }
 
   function updateHud() {
@@ -215,47 +219,54 @@
     for (let y = 0; y < level.height; y++) {
       for (let x = 0; x < level.width; x++) {
         const cell = boardState[y][x];
+        const spinning = justRotated && justRotated.x === x && justRotated.y === y;
         const tile = document.createElement('button');
-        tile.className = `tile ${cell.type !== 'empty' ? '' : 'locked'} ${cell.filled ? 'filled' : ''} ${cell.type}`;
+        tile.className = `tile ${cell.type !== 'empty' ? '' : 'locked'} ${cell.filled ? 'filled' : ''} ${cell.type}${spinning ? ' spinning' : ''}`;
         tile.setAttribute('aria-label', `${cell.type} tile ${x},${y}`);
         tile.disabled = cell.type === 'empty';
         tile.addEventListener('click', () => rotateTile(x,y));
+
+        const inner = document.createElement('div');
+        inner.className = 'tile-inner';
 
         const cons = connectionsFor(cell);
         cons.forEach(dir => {
           const c = document.createElement('div');
           c.className = connectorClass(dir, cell.filled);
-          tile.appendChild(c);
+          inner.appendChild(c);
         });
 
         if (cons.length) {
           const center = document.createElement('div');
           center.className = `connector center ${cell.filled ? 'flowing' : ''}`;
-          tile.appendChild(center);
+          inner.appendChild(center);
         }
 
         if (cell.type === 'source' || cell.type === 'receiver') {
           const core = document.createElement('div');
           core.className = 'core';
-          tile.appendChild(core);
+          inner.appendChild(core);
         }
 
+        tile.appendChild(inner);
         boardEl.appendChild(tile);
       }
     }
   }
 
   function rotateTile(x,y) {
-    if (solved) return;
+    if (solved || flowAnimating) return;
     const cell = boardState[y][x];
     if (cell.type === 'empty' || cell.type === 'cross') return;
     undoStack.push({ x, y, prevRotation: cell.rotation });
     cell.rotation = (cell.rotation + 1) % 4;
     moveCount++;
+    justRotated = {x, y};
     Sound.rotate();
     updateHud();
     renderBoard();
     autoCheckSolved();
+    justRotated = null;
   }
 
   function undoMove() {
@@ -364,26 +375,46 @@
     tile.classList.add('hint');
     setTimeout(() => tile.classList.remove('hint'), 1800);
     showToast(`Try rotating tile ${hint.x + 1}, ${hint.y + 1}.`);
-    showRewardedAd();
+  }
+
+  function animateFlowReveal(visitOrder, onComplete) {
+    flowAnimating = true;
+    const level = currentLevel();
+    const stepDelay = Math.max(18, Math.min(55, 550 / visitOrder.length));
+
+    for (const row of boardState) for (const cell of row) cell.filled = false;
+    Array.from(boardEl.children).forEach(el => {
+      el.classList.remove('filled', 'flow-reveal');
+      el.querySelectorAll('.connector').forEach(c => c.classList.remove('flowing'));
+    });
+
+    visitOrder.forEach(([x, y], i) => {
+      setTimeout(() => {
+        boardState[y][x].filled = true;
+        const tileEl = boardEl.children[y * level.width + x];
+        if (tileEl) {
+          tileEl.classList.add('filled', 'flow-reveal');
+          tileEl.querySelectorAll('.connector').forEach(c => c.classList.add('flowing'));
+          setTimeout(() => tileEl.classList.remove('flow-reveal'), 400);
+        }
+        if (i === visitOrder.length - 1) {
+          setTimeout(() => { flowAnimating = false; onComplete(); }, 120);
+        }
+      }, i * stepDelay);
+    });
   }
 
   function testFlow() {
+    if (flowAnimating) return;
     const result = simulateFlow();
-    renderBoard();
     Sound.flow();
     if (result.allReceiversFilled) {
-      handleWin();
+      animateFlowReveal(result.visitOrder, () => handleWin());
     } else {
-      showToast('Flow incomplete. Keep tuning the system.');
+      animateFlowReveal(result.visitOrder, () => {
+        showToast('Flow incomplete. Keep tuning the system.');
+      });
     }
-  }
-
-  function showInterstitialAd() {
-    console.log('[Monetization] Interstitial ad placeholder');
-  }
-
-  function showRewardedAd() {
-    console.log('[Monetization] Rewarded ad placeholder');
   }
 
   document.getElementById('resetBtn').addEventListener('click', resetLevel);
@@ -392,7 +423,6 @@
   document.getElementById('playFlowBtn').addEventListener('click', testFlow);
   document.getElementById('nextBtn').addEventListener('click', () => {
     if (levelIndex + 1 < state.unlocked && levelIndex + 1 < LEVELS.length) {
-      showInterstitialAd();
       loadLevel(Math.min(levelIndex + 1, LEVELS.length - 1));
     }
   });
@@ -405,7 +435,6 @@
   document.getElementById('winNextBtn').addEventListener('click', () => {
     winModal.classList.add('hidden');
     if (levelIndex + 1 < LEVELS.length) {
-      showInterstitialAd();
       loadLevel(Math.min(levelIndex + 1, LEVELS.length - 1));
     } else {
       showToast('All levels complete. Add more content next.');
@@ -435,6 +464,11 @@
       if (!nextBtn.disabled) nextBtn.click();
     }
   });
+
+  // Mobile: prevent page scroll when touching a rotatable tile
+  boardEl.addEventListener('touchstart', e => {
+    if (e.target.closest('button.tile:not([disabled])')) e.preventDefault();
+  }, { passive: false });
 
   loadLevel(levelIndex);
 })();
