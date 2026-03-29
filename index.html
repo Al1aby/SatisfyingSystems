@@ -4,7 +4,199 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Flow Foundry</title>
-  <link rel="stylesheet" href="src/styles.css">
+  <style>
+
+:root{
+  --bg:#0f1220;
+  --panel:#171b2e;
+  --panel-2:#1f2540;
+  --line:#6f7cff;
+  --flow:#70e1c8;
+  --flow-soft:rgba(112,225,200,.28);
+  --text:#eff3ff;
+  --muted:#a7b0d6;
+  --accent:#ffc857;
+  --danger:#ff7171;
+  --shadow:0 12px 30px rgba(0,0,0,.25);
+  --radius:18px;
+  --tile:68px;
+}
+
+*{box-sizing:border-box}
+html,body{
+  margin:0;padding:0;background:
+  radial-gradient(circle at top, #1c2240 0%, #0f1220 55%);
+  color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  min-height:100%;
+}
+body{padding:14px; padding-bottom:calc(14px + env(safe-area-inset-bottom));}
+button{
+  appearance:none;border:0;border-radius:14px;padding:14px 16px;font:inherit;
+  background:linear-gradient(180deg,#7c8cff,#6473ff);color:white;font-weight:700;
+  box-shadow:var(--shadow);cursor:pointer;
+}
+button:disabled{opacity:.45;cursor:not-allowed}
+.secondary-btn{background:linear-gradient(180deg,#2f385f,#252c49)}
+.icon-btn{padding:12px 14px;min-width:48px}
+.app-shell{max-width:900px;margin:0 auto;display:grid;gap:14px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.topbar h1{margin:0;font-size:clamp(1.8rem,5vw,2.4rem)}
+.tagline{margin:.15rem 0 0;color:var(--muted)}
+.card{
+  background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  backdrop-filter:blur(8px);
+}
+.hud{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px}
+.hud-item{
+  background:rgba(255,255,255,.04);border-radius:14px;padding:10px 12px;
+  display:flex;flex-direction:column;gap:4px
+}
+.hud-item span{color:var(--muted);font-size:.85rem}
+.hud-item strong{font-size:1.15rem}
+.game-layout{display:grid;gap:14px}
+.board-card{padding:14px}
+.board-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:12px}
+.board-header h2{margin:0 0 4px}
+.board-header p{margin:0;color:var(--muted)}
+.board{
+  display:grid;gap:8px;justify-content:center;align-content:center;
+  min-height:320px;padding:8px;
+}
+.controls{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:10px}
+.controls-help{
+  margin:0;
+  color:var(--muted);
+  font-size:.9rem;
+  text-align:center;
+}
+kbd{
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:6px;
+  padding:2px 6px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:.82em;
+}
+.levels-panel{padding:14px}
+.levels-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.level-btn{
+  padding:12px 8px;border-radius:14px;text-align:center;font-weight:800;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);cursor:pointer;
+}
+.level-btn.locked{opacity:.38;cursor:not-allowed}
+.level-btn.active{outline:2px solid var(--accent)}
+.level-btn .mini-stars{display:block;font-size:.82rem;color:#ffd98e;margin-top:4px}
+.tile{
+  width:var(--tile);height:var(--tile);border-radius:18px;position:relative;
+  background:linear-gradient(180deg,#262e50,#1c2340);
+  border:1px solid rgba(255,255,255,.06);box-shadow:inset 0 1px 0 rgba(255,255,255,.05), var(--shadow);
+  overflow:hidden;cursor:pointer;touch-action:manipulation;
+}
+.tile.locked{cursor:default}
+.tile::before{
+  content:"";position:absolute;inset:10px;border-radius:14px;background:rgba(255,255,255,.03)
+}
+.connector{
+  position:absolute;background:#5f699b;border-radius:999px;transition:background .2s ease, box-shadow .2s ease;
+}
+.connector.flowing{
+  background:linear-gradient(180deg,#9af2df,#70e1c8);
+  box-shadow:0 0 16px var(--flow), 0 0 30px rgba(112,225,200,.3);
+}
+.connector.center{
+  width:18px;height:18px;left:50%;top:50%;transform:translate(-50%,-50%)
+}
+.connector.up,.connector.down{width:14px;height:28px;left:50%;transform:translateX(-50%)}
+.connector.up{top:0}
+.connector.down{bottom:0}
+.connector.left,.connector.right{height:14px;width:28px;top:50%;transform:translateY(-50%)}
+.connector.left{left:0}
+.connector.right{right:0}
+.tile.source .core,
+.tile.receiver .core{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:28px;height:28px;border-radius:50%;z-index:2;
+}
+.tile.source .core{
+  background:radial-gradient(circle at 35% 30%,#dcfff7 0,#70e1c8 38%,#1da88e 100%);
+  box-shadow:0 0 22px rgba(112,225,200,.45);
+}
+.tile.receiver .core{
+  background:radial-gradient(circle at 35% 30%,#fff1b8 0,#ffc857 45%,#d1921c 100%);
+  box-shadow:0 0 18px rgba(255,200,87,.35);
+}
+.tile.filled{
+  box-shadow:0 0 0 1px rgba(112,225,200,.35), 0 0 22px rgba(112,225,200,.2), var(--shadow);
+}
+.tile-inner{
+  position:absolute;inset:0;border-radius:inherit;transform-origin:center;
+}
+.tile.spinning .tile-inner{
+  animation:spin-cw 0.14s ease-out forwards;
+}
+@keyframes spin-cw{
+  from{transform:rotate(0deg)}
+  to{transform:rotate(90deg)}
+}
+.tile.flow-reveal{
+  animation:flow-pop 0.3s ease-out;
+}
+@keyframes flow-pop{
+  0%{box-shadow:0 0 0 0 rgba(112,225,200,.7),var(--shadow)}
+  60%{box-shadow:0 0 0 8px rgba(112,225,200,.2),var(--shadow)}
+  100%{box-shadow:0 0 0 1px rgba(112,225,200,.35), 0 0 22px rgba(112,225,200,.2),var(--shadow)}
+}
+.tile.hint{animation:pulse 1s ease 2}
+@keyframes pulse{
+  0%,100%{transform:scale(1)}
+  50%{transform:scale(1.05)}
+}
+.toast{
+  position:fixed;left:50%;bottom:20px;transform:translateX(-50%) translateY(120px);
+  background:rgba(15,18,32,.92);color:#fff;padding:12px 16px;border-radius:999px;
+  box-shadow:var(--shadow);transition:transform .25s ease;z-index:40
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.modal{
+  position:fixed;inset:0;background:rgba(0,0,0,.52);display:grid;place-items:center;
+  padding:18px;z-index:50
+}
+.modal.hidden{display:none}
+.modal-card{
+  width:min(100%,420px);background:linear-gradient(180deg,#1c2340,#12182c);
+  border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;text-align:center;box-shadow:var(--shadow)
+}
+.modal-card h2{margin-top:0}
+.star-display{font-size:2rem;letter-spacing:8px;margin:12px 0 18px}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:760px){
+  :root{--tile:min(17vw,72px)}
+  .hud{grid-template-columns:repeat(2,1fr)}
+  .board-header{flex-direction:column}
+  .controls{grid-template-columns:repeat(2,1fr)}
+  .level-grid{grid-template-columns:repeat(4,1fr)}
+  .controls-help{font-size:.8rem}
+}
+@media (max-width:480px){
+  :root{--tile:min(18vw,66px)}
+  .hud{grid-template-columns:repeat(2,1fr);gap:6px;padding:8px}
+  .hud-item{padding:8px 10px}
+  .board-card{padding:10px}
+  .controls{gap:8px;padding:8px}
+  .level-grid{grid-template-columns:repeat(4,1fr);gap:8px}
+  .topbar h1{font-size:1.5rem}
+}
+@media (max-width:360px){
+  :root{--tile:min(19vw,58px)}
+  .level-grid{grid-template-columns:repeat(3,1fr)}
+  .controls-help{display:none}
+}
+
+  </style>
 </head>
 <body>
   <div class="app-shell">
@@ -14,7 +206,7 @@
         <h1>Flow Foundry</h1>
         <p class="tagline">Rotate tiles. Connect the flow.</p>
       </div>
-      <button id="soundBtn" class="secondary-btn icon-btn" aria-label="Toggle sound">🔊</button>
+      <button id="soundBtn" class="secondary-btn icon-btn" aria-label="Toggle sound">&#x1F50A;</button>
     </header>
 
     <div class="card hud">
@@ -24,7 +216,7 @@
       </div>
       <div class="hud-item">
         <span>Best</span>
-        <strong id="bestLabel">—</strong>
+        <strong id="bestLabel">&mdash;</strong>
       </div>
       <div class="hud-item">
         <span>Stars</span>
@@ -40,22 +232,22 @@
       <div class="card board-card">
         <div class="board-header">
           <div>
-            <h2>Level <span id="levelLabel">1</span> — <span id="levelTitle"></span></h2>
+            <h2>Level <span id="levelLabel">1</span> &mdash; <span id="levelTitle"></span></h2>
             <p id="levelGoal"></p>
           </div>
         </div>
         <div id="board" class="board"></div>
         <div class="card controls">
-          <button id="resetBtn" class="secondary-btn icon-btn" title="Reset (R)">↺ Reset</button>
-          <button id="undoBtn" class="secondary-btn icon-btn" title="Undo (U)">⟲ Undo</button>
-          <button id="hintBtn" class="secondary-btn icon-btn" title="Hint (H)">💡 Hint</button>
-          <button id="playFlowBtn" class="secondary-btn icon-btn" title="Test Flow (T)">▶ Test</button>
+          <button id="resetBtn" class="secondary-btn icon-btn" title="Reset (R)">&#x21BA; Reset</button>
+          <button id="undoBtn" class="secondary-btn icon-btn" title="Undo (U)">&#x27F2; Undo</button>
+          <button id="hintBtn" class="secondary-btn icon-btn" title="Hint (H)">&#x1F4A1; Hint</button>
+          <button id="playFlowBtn" class="secondary-btn icon-btn" title="Test Flow (T)">&#x25B6; Test</button>
         </div>
         <p class="controls-help">
           <kbd>R</kbd> Reset &nbsp; <kbd>U</kbd> Undo &nbsp; <kbd>H</kbd> Hint &nbsp; <kbd>T</kbd> Test &nbsp; <kbd>N</kbd> Next
         </p>
         <div style="display:flex;justify-content:flex-end;padding:0 10px 10px">
-          <button id="nextBtn" disabled title="Next Level (N)">Next →</button>
+          <button id="nextBtn" disabled title="Next Level (N)">Next &#x2192;</button>
         </div>
       </div>
 
@@ -74,17 +266,1474 @@
   <div id="winModal" class="modal hidden">
     <div class="modal-card">
       <h2>System Online!</h2>
-      <div id="starDisplay" class="star-display">★★★</div>
+      <div id="starDisplay" class="star-display">&#x2605;&#x2605;&#x2605;</div>
       <p id="winText"></p>
       <div class="modal-actions">
-        <button id="winReplayBtn" class="secondary-btn">↺ Replay</button>
-        <button id="winNextBtn">Next →</button>
+        <button id="winReplayBtn" class="secondary-btn">&#x21BA; Replay</button>
+        <button id="winNextBtn">Next &#x2192;</button>
       </div>
     </div>
   </div>
 
-  <script src="src/levels.js"></script>
-  <script src="src/audio.js"></script>
-  <script src="src/game.js"></script>
+  <script>
+
+window.LEVELS = [
+  {
+    id: 1,
+    title: "Tutorial Flow",
+    goal: "Connect the source to the receiver.",
+    width: 3, height: 3,
+    source: [0,1],
+    receivers: [[2,1]],
+    tiles: [
+      ["empty","line","empty"],
+      ["source","line","receiver"],
+      ["empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0],
+      [0,1,0],
+      [0,0,0]
+    ],
+    scramble: [[1,1,1]]
+  },
+  {
+    id: 2,
+    title: "Corner Turn",
+    goal: "Use an elbow to bend the route.",
+    width: 3, height: 3,
+    source: [0,2],
+    receivers: [[2,0]],
+    tiles: [
+      ["empty","elbow","receiver"],
+      ["empty","line","empty"],
+      ["source","elbow","empty"]
+    ],
+    solution: [
+      [0,1,0],
+      [0,0,0],
+      [0,3,0]
+    ],
+    scramble: [[0,1,1],[1,1,1],[2,1,2]]
+  },
+  {
+    id: 3,
+    title: "Split Feed",
+    goal: "Send flow to both receivers.",
+    width: 4, height: 3,
+    source: [0,1],
+    receivers: [[3,0],[3,2]],
+    tiles: [
+      ["empty","empty","elbow","receiver"],
+      ["source","line","tee","empty"],
+      ["empty","empty","elbow","receiver"]
+    ],
+    solution: [
+      [0,0,1,0],
+      [0,0,3,0],
+      [0,0,0,0]
+    ],
+    scramble: [[0,2,2],[0,3,1],[1,2,1],[2,2,1],[2,3,2]]
+  },
+  {
+    id: 4,
+    title: "Cross Current",
+    goal: "Cross the board and feed both ends.",
+    width: 4, height: 4,
+    source: [0,1],
+    receivers: [[3,0],[3,3]],
+    tiles: [
+      ["empty","empty","tee","receiver"],
+      ["source","line","cross","line"],
+      ["empty","empty","line","empty"],
+      ["empty","empty","elbow","receiver"]
+    ],
+    solution: [
+      [0,0,1,0],
+      [0,0,0,1],
+      [0,0,1,0],
+      [0,0,0,0]
+    ],
+    scramble: [[0,2,1],[0,3,2],[1,2,1],[1,3,2],[2,2,1],[3,2,3],[3,3,1]]
+  },
+  {
+    id: 5,
+    title: "Long Haul",
+    goal: "A longer route with one correct branch.",
+    width: 5, height: 4,
+    source: [0,3],
+    receivers: [[4,0]],
+    tiles: [
+      ["empty","empty","empty","elbow","receiver"],
+      ["empty","empty","empty","line","empty"],
+      ["empty","empty","empty","line","empty"],
+      ["source","line","line","elbow","empty"]
+    ],
+    solution: [
+      [0,0,0,1,0],
+      [0,0,0,1,0],
+      [0,0,0,1,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[0,3,2],[1,3,1],[2,3,1],[3,1,2],[3,2,2],[3,3,2]]
+  },
+  {
+    id: 6,
+    title: "Twin Pumps",
+    goal: "Branch cleanly to both collectors.",
+    width: 5, height: 4,
+    source: [0,2],
+    receivers: [[4,1],[4,3]],
+    tiles: [
+      ["empty","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","receiver"],
+      ["source","line","tee","empty","empty"],
+      ["empty","empty","elbow","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0],
+      [0,0,1,0,0],
+      [0,0,3,0,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[1,2,2],[1,3,2],[2,1,2],[2,2,1],[3,2,1],[3,3,2]]
+  },
+  {
+    id: 7,
+    title: "Valve Square",
+    goal: "Navigate the square efficiently.",
+    width: 4, height: 4,
+    source: [1,3],
+    receivers: [[3,1]],
+    tiles: [
+      ["empty","elbow","line","elbow"],
+      ["empty","line","empty","receiver"],
+      ["empty","line","empty","line"],
+      ["empty","source","line","elbow"]
+    ],
+    solution: [
+      [0,1,0,2],
+      [0,1,0,1],
+      [0,1,0,1],
+      [0,0,0,3]
+    ],
+    scramble: [[0,1,1],[0,2,1],[0,3,1],[1,1,2],[2,1,1],[2,3,2],[3,2,2],[3,3,1]]
+  },
+  {
+    id: 8,
+    title: "Collector Grid",
+    goal: "Feed the two collectors without leaks.",
+    width: 5, height: 5,
+    source: [0,2],
+    receivers: [[4,1],[4,3]],
+    tiles: [
+      ["empty","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","receiver"],
+      ["source","line","cross","line","empty"],
+      ["empty","empty","elbow","line","receiver"],
+      ["empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0],
+      [0,0,1,0,0],
+      [0,0,0,0,0],
+      [0,0,0,0,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[1,2,1],[1,3,2],[2,2,1],[2,3,2],[3,2,3],[3,3,2]]
+  },
+  {
+    id: 9,
+    title: "Channel Fork",
+    goal: "Use the fork at the right moment.",
+    width: 5, height: 5,
+    source: [0,4],
+    receivers: [[4,0],[4,2]],
+    tiles: [
+      ["empty","empty","empty","tee","receiver"],
+      ["empty","empty","empty","line","empty"],
+      ["empty","empty","empty","tee","receiver"],
+      ["empty","empty","empty","line","empty"],
+      ["source","line","line","elbow","empty"]
+    ],
+    solution: [
+      [0,0,0,1,0],
+      [0,0,0,1,0],
+      [0,0,0,3,0],
+      [0,0,0,1,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[0,3,2],[1,3,1],[2,3,1],[3,3,1],[4,1,2],[4,2,2],[4,3,2]]
+  },
+  {
+    id: 10,
+    title: "Balanced Network",
+    goal: "A denser layout with one neat solution.",
+    width: 5, height: 5,
+    source: [0,2],
+    receivers: [[4,1],[4,3]],
+    tiles: [
+      ["empty","empty","empty","empty","empty"],
+      ["empty","elbow","tee","line","receiver"],
+      ["source","line","cross","empty","empty"],
+      ["empty","elbow","tee","line","receiver"],
+      ["empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0],
+      [0,1,1,0,0],
+      [0,0,0,0,0],
+      [0,0,3,0,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[1,1,2],[1,2,1],[1,3,2],[2,2,2],[3,1,1],[3,2,1],[3,3,2]]
+  },
+  {
+    id: 11,
+    title: "Ring Route",
+    goal: "Close the ring and deliver the output.",
+    width: 5, height: 5,
+    source: [0,2],
+    receivers: [[4,2]],
+    tiles: [
+      ["empty","elbow","line","elbow","empty"],
+      ["empty","line","empty","line","empty"],
+      ["source","tee","empty","tee","receiver"],
+      ["empty","line","empty","line","empty"],
+      ["empty","elbow","line","elbow","empty"]
+    ],
+    solution: [
+      [0,1,0,2,0],
+      [0,1,0,1,0],
+      [0,3,0,3,0],
+      [0,1,0,1,0],
+      [0,0,0,3,0]
+    ],
+    scramble: [[0,1,2],[0,2,1],[0,3,1],[1,1,2],[1,3,2],[2,1,1],[2,3,1],[3,1,2],[3,3,2],[4,1,1],[4,2,1],[4,3,1]]
+  },
+  {
+    id: 12,
+    title: "Three Outputs",
+    goal: "Feed all three receivers.",
+    width: 6, height: 5,
+    source: [0,2],
+    receivers: [[5,0],[5,2],[5,4]],
+    tiles: [
+      ["empty","empty","empty","elbow","line","receiver"],
+      ["empty","empty","empty","line","empty","empty"],
+      ["source","line","line","tee","line","receiver"],
+      ["empty","empty","empty","line","empty","empty"],
+      ["empty","empty","empty","elbow","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,1,0,0],
+      [0,0,0,1,0,0],
+      [0,0,0,3,0,0],
+      [0,0,0,1,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[0,3,2],[0,4,2],[1,3,1],[2,1,2],[2,2,2],[2,3,1],[2,4,2],[3,3,1],[4,3,1],[4,4,2]]
+  },
+  {
+    id: 13,
+    title: "S-Curve",
+    goal: "Trace the serpentine route.",
+    width: 6, height: 5,
+    source: [0,4],
+    receivers: [[5,0]],
+    tiles: [
+      ["empty","empty","empty","empty","elbow","receiver"],
+      ["empty","empty","empty","empty","line","empty"],
+      ["empty","empty","elbow","line","elbow","empty"],
+      ["empty","empty","line","empty","empty","empty"],
+      ["source","line","elbow","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,1,0],
+      [0,0,0,0,1,0],
+      [0,0,1,0,3,0],
+      [0,0,1,0,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[0,4,2],[1,4,1],[2,2,2],[2,3,2],[2,4,1],[3,2,1],[4,1,2],[4,2,2]]
+  },
+  {
+    id: 14,
+    title: "Pressure Split",
+    goal: "Split flow into upper and lower channels.",
+    width: 6, height: 5,
+    source: [0,2],
+    receivers: [[5,1],[5,3]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","line","receiver"],
+      ["source","line","cross","empty","empty","empty"],
+      ["empty","empty","elbow","line","line","receiver"],
+      ["empty","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0],
+      [0,0,1,0,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,2,2],[1,3,2],[1,4,2],[2,2,1],[3,2,1],[3,3,2],[3,4,2]]
+  },
+  {
+    id: 15,
+    title: "Factory Spine",
+    goal: "Build around a central spine.",
+    width: 6, height: 6,
+    source: [0,3],
+    receivers: [[5,1],[5,4]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","empty","line","elbow","receiver"],
+      ["empty","empty","empty","line","empty","empty"],
+      ["source","line","line","cross","line","empty"],
+      ["empty","empty","empty","line","elbow","receiver"],
+      ["empty","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0],
+      [0,0,0,1,1,0],
+      [0,0,0,1,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,1,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,3,1],[1,4,2],[2,3,1],[3,1,2],[3,2,2],[3,3,1],[3,4,2],[4,3,1],[4,4,1]]
+  },
+  {
+    id: 16,
+    title: "Wide Split",
+    goal: "Long branches with little room for error.",
+    width: 7, height: 5,
+    source: [0,2],
+    receivers: [[6,0],[6,4]],
+    tiles: [
+      ["empty","empty","empty","elbow","line","line","receiver"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["source","line","line","tee","empty","empty","empty"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","elbow","line","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,1,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,3,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[0,3,2],[0,4,2],[0,5,2],[1,3,1],[2,1,2],[2,2,2],[2,3,1],[3,3,1],[4,3,1],[4,4,2],[4,5,2]]
+  },
+  {
+    id: 17,
+    title: "Gridlock",
+    goal: "Dense middle, clean finish.",
+    width: 6, height: 6,
+    source: [0,2],
+    receivers: [[5,1],[5,4]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty"],
+      ["empty","elbow","tee","line","elbow","receiver"],
+      ["source","line","cross","line","empty","empty"],
+      ["empty","elbow","cross","line","elbow","receiver"],
+      ["empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0],
+      [0,1,1,0,1,0],
+      [0,0,0,0,0,0],
+      [0,0,3,0,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,1,2],[1,2,1],[1,3,2],[1,4,2],[2,2,1],[2,3,2],[3,1,1],[3,2,1],[3,3,2],[3,4,1]]
+  },
+  {
+    id: 18,
+    title: "Triple Branch",
+    goal: "Three outputs from one backbone.",
+    width: 7, height: 6,
+    source: [0,3],
+    receivers: [[6,1],[6,3],[6,5]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","empty","elbow","line","line","receiver"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["source","line","line","cross","line","line","receiver"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","elbow","line","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,3,2],[1,4,2],[1,5,2],[2,3,1],[3,1,2],[3,2,2],[3,3,1],[3,4,2],[3,5,2],[4,3,1],[5,3,1],[5,4,2],[5,5,2]]
+  },
+  {
+    id: 19,
+    title: "Maze Feed",
+    goal: "A winding final stretch.",
+    width: 7, height: 6,
+    source: [0,5],
+    receivers: [[6,0]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","elbow","receiver"],
+      ["empty","empty","empty","empty","empty","line","empty"],
+      ["empty","empty","empty","elbow","line","elbow","empty"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","elbow","line","elbow","empty","empty","empty"],
+      ["source","elbow","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,1,0],
+      [0,0,0,0,0,1,0],
+      [0,0,0,1,0,3,0],
+      [0,0,0,1,0,0,0],
+      [0,1,0,3,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[0,5,2],[1,5,1],[2,3,2],[2,4,2],[2,5,1],[3,3,1],[4,1,2],[4,2,2],[4,3,1],[5,1,1]]
+  },
+  {
+    id: 20,
+    title: "Master System",
+    goal: "Feed every collector in the final board.",
+    width: 7, height: 7,
+    source: [0,3],
+    receivers: [[6,1],[6,3],[6,5]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","elbow","empty","empty"],
+      ["empty","empty","line","empty","line","empty","empty"],
+      ["source","line","cross","line","cross","line","receiver"],
+      ["empty","empty","line","empty","line","empty","empty"],
+      ["empty","empty","elbow","line","elbow","line","receiver"],
+      ["empty","empty","empty","empty","empty","empty","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,1,0,2,0,0],
+      [0,0,1,0,1,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,1,0,1,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,2,2],[1,3,2],[1,4,1],[2,2,1],[2,4,1],[3,1,2],[3,2,1],[3,3,2],[3,4,1],[3,5,2],[5,2,1],[5,3,2],[5,4,1],[5,5,2],[6,6,1]]
+  },
+  {
+    id: 21,
+    title: "Side Step",
+    goal: "A simple detour to the right.",
+    width: 4, height: 4,
+    source: [0,1],
+    receivers: [[3,3]],
+    tiles: [
+      ["empty","empty","empty","empty"],
+      ["source","elbow","line","elbow"],
+      ["empty","empty","empty","line"],
+      ["empty","empty","empty","receiver"]
+    ],
+    solution: [
+      [0,0,0,0],
+      [0,0,0,1],
+      [0,0,0,1],
+      [0,0,0,0]
+    ],
+    scramble: [[1,1,2],[2,1,1],[3,1,2],[3,2,2]]
+  },
+  {
+    id: 22,
+    title: "U-Turn",
+    goal: "Double back to reach the exit.",
+    width: 4, height: 4,
+    source: [0,0],
+    receivers: [[0,3]],
+    tiles: [
+      ["source","line","line","elbow"],
+      ["empty","empty","empty","line"],
+      ["empty","empty","empty","line"],
+      ["receiver","line","line","elbow"]
+    ],
+    solution: [
+      [0,0,0,1],
+      [0,0,0,1],
+      [0,0,0,1],
+      [0,0,0,3]
+    ],
+    scramble: [[1,0,1],[2,0,1],[3,0,2],[3,1,2],[3,2,2],[3,3,1],[2,3,1],[1,3,1]]
+  },
+  {
+    id: 23,
+    title: "Short Branch",
+    goal: "Two receivers, one quick split.",
+    width: 5, height: 3,
+    source: [0,1],
+    receivers: [[4,0],[4,2]],
+    tiles: [
+      ["empty","empty","elbow","line","receiver"],
+      ["source","line","tee","empty","empty"],
+      ["empty","empty","elbow","line","receiver"]
+    ],
+    solution: [
+      [0,0,1,0,0],
+      [0,0,3,0,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[1,1,2],[2,1,1],[2,2,2],[3,1,1],[3,2,2]]
+  },
+  {
+    id: 24,
+    title: "Z-Bend",
+    goal: "Navigate the Z-shaped route.",
+    width: 5, height: 4,
+    source: [0,3],
+    receivers: [[4,0]],
+    tiles: [
+      ["empty","empty","empty","line","receiver"],
+      ["empty","empty","empty","line","empty"],
+      ["empty","elbow","line","elbow","empty"],
+      ["source","elbow","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,1,0],
+      [0,0,0,1,0],
+      [0,1,0,3,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[1,3,1],[1,2,2],[2,2,1],[3,2,2],[3,1,2],[3,0,1]]
+  },
+  {
+    id: 25,
+    title: "Four Corners",
+    goal: "Reach all four corners of the grid.",
+    width: 5, height: 5,
+    source: [2,2],
+    receivers: [[0,0],[4,0],[0,4],[4,4]],
+    tiles: [
+      ["receiver","elbow","line","elbow","receiver"],
+      ["line","empty","empty","empty","line"],
+      ["line","empty","source","empty","line"],
+      ["line","empty","empty","empty","line"],
+      ["receiver","elbow","line","elbow","receiver"]
+    ],
+    solution: [
+      [0,1,0,2,0],
+      [1,0,0,0,1],
+      [1,0,0,0,1],
+      [1,0,0,0,1],
+      [0,0,0,3,0]
+    ],
+    scramble: [[0,1,2],[0,3,2],[1,0,2],[3,0,1],[4,1,1],[4,3,2],[1,4,1],[3,4,2],[4,0,1],[0,4,1],[4,4,2]]
+  },
+  {
+    id: 26,
+    title: "Spiral In",
+    goal: "Wind inward to the exit.",
+    width: 5, height: 5,
+    source: [0,4],
+    receivers: [[2,2]],
+    tiles: [
+      ["empty","empty","empty","empty","empty"],
+      ["empty","empty","empty","empty","empty"],
+      ["empty","empty","receiver","elbow","empty"],
+      ["empty","empty","empty","line","empty"],
+      ["source","line","line","elbow","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0],
+      [0,0,0,0,0],
+      [0,0,0,1,0],
+      [0,0,0,1,0],
+      [0,0,0,0,0]
+    ],
+    scramble: [[1,4,1],[2,4,1],[3,4,2],[3,3,2],[3,2,1],[2,2,1]]
+  },
+  {
+    id: 27,
+    title: "Crossroads",
+    goal: "Two paths cross — keep them clean.",
+    width: 6, height: 5,
+    source: [0,2],
+    receivers: [[5,2],[3,0],[3,4]],
+    tiles: [
+      ["empty","empty","empty","receiver","empty","empty"],
+      ["empty","empty","empty","line","empty","empty"],
+      ["source","line","line","cross","line","receiver"],
+      ["empty","empty","empty","line","empty","empty"],
+      ["empty","empty","empty","receiver","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0],
+      [0,0,0,1,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,1,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,2,1],[2,2,1],[3,1,2],[3,3,1],[4,2,1]]
+  },
+  {
+    id: 28,
+    title: "Zig-Zag",
+    goal: "Follow the zig-zag all the way through.",
+    width: 6, height: 5,
+    source: [0,4],
+    receivers: [[5,0]],
+    tiles: [
+      ["empty","empty","empty","empty","elbow","receiver"],
+      ["empty","empty","empty","empty","line","empty"],
+      ["empty","elbow","line","elbow","elbow","empty"],
+      ["empty","line","empty","empty","empty","empty"],
+      ["source","elbow","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,1,0],
+      [0,0,0,0,1,0],
+      [0,1,0,2,3,0],
+      [0,1,0,0,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,4,1],[1,3,2],[1,2,2],[2,2,1],[3,2,1],[4,2,2],[4,1,2],[4,0,1]]
+  },
+  {
+    id: 29,
+    title: "Dual Feed",
+    goal: "Two sources, one shared receiver.",
+    width: 6, height: 4,
+    source: [0,1],
+    receivers: [[5,1],[5,3]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty"],
+      ["source","line","line","tee","line","receiver"],
+      ["empty","empty","empty","line","empty","empty"],
+      ["empty","empty","empty","elbow","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0,0],
+      [0,0,0,3,0,0],
+      [0,0,0,1,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,1,1],[2,1,2],[3,1,1],[3,2,2],[3,3,1],[4,3,2],[4,1,1]]
+  },
+  {
+    id: 30,
+    title: "Square Ring",
+    goal: "Flow all the way around the square.",
+    width: 6, height: 6,
+    source: [0,3],
+    receivers: [[5,3]],
+    tiles: [
+      ["empty","elbow","line","line","elbow","empty"],
+      ["empty","line","empty","empty","line","empty"],
+      ["empty","line","empty","empty","line","empty"],
+      ["source","tee","empty","empty","tee","receiver"],
+      ["empty","line","empty","empty","line","empty"],
+      ["empty","elbow","line","line","elbow","empty"]
+    ],
+    solution: [
+      [0,1,0,0,2,0],
+      [0,1,0,0,1,0],
+      [0,1,0,0,1,0],
+      [0,3,0,0,3,0],
+      [0,1,0,0,1,0],
+      [0,0,0,0,3,0]
+    ],
+    scramble: [[1,0,2],[2,0,1],[3,0,1],[4,0,1],[4,1,2],[4,2,2],[4,4,2],[4,5,1],[3,5,1],[2,5,1],[1,5,2],[1,4,2],[1,3,1],[1,2,2],[1,1,2]]
+  },
+  {
+    id: 31,
+    title: "Parallel Lines",
+    goal: "Two lanes, two destinations.",
+    width: 7, height: 4,
+    source: [0,1],
+    receivers: [[6,1],[6,3]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty","empty"],
+      ["source","line","line","tee","line","line","receiver"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","elbow","line","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,0,3,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,1,2],[2,1,1],[3,1,1],[3,2,2],[3,3,1],[4,3,2],[5,1,1],[4,1,1],[5,3,2]]
+  },
+  {
+    id: 32,
+    title: "Outer Loop",
+    goal: "Hug the perimeter to find the exit.",
+    width: 6, height: 6,
+    source: [0,0],
+    receivers: [[5,5]],
+    tiles: [
+      ["source","line","line","line","line","elbow"],
+      ["empty","empty","empty","empty","empty","line"],
+      ["empty","empty","empty","empty","empty","line"],
+      ["empty","empty","empty","empty","empty","line"],
+      ["empty","empty","empty","empty","empty","line"],
+      ["empty","empty","empty","empty","empty","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0,1],
+      [0,0,0,0,0,1],
+      [0,0,0,0,0,1],
+      [0,0,0,0,0,1],
+      [0,0,0,0,0,1],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,0,1],[2,0,1],[3,0,1],[4,0,1],[5,0,2],[5,1,2],[5,2,2],[5,3,2],[5,4,2]]
+  },
+  {
+    id: 33,
+    title: "Triple Tee",
+    goal: "Three tees in a chain — align them all.",
+    width: 7, height: 5,
+    source: [0,2],
+    receivers: [[6,0],[6,2],[6,4]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","elbow","receiver"],
+      ["empty","empty","empty","empty","empty","line","empty"],
+      ["source","line","tee","line","tee","tee","receiver"],
+      ["empty","empty","empty","empty","empty","line","empty"],
+      ["empty","empty","empty","empty","empty","elbow","receiver"]
+    ],
+    solution: [
+      [0,0,0,0,0,1,0],
+      [0,0,0,0,0,1,0],
+      [0,0,3,0,3,3,0],
+      [0,0,0,0,0,1,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,2,1],[2,2,2],[3,2,1],[4,2,1],[5,2,1],[5,1,2],[5,3,2],[5,0,1],[5,4,2]]
+  },
+  {
+    id: 34,
+    title: "Switchback",
+    goal: "Reverse direction twice.",
+    width: 6, height: 6,
+    source: [0,5],
+    receivers: [[5,0]],
+    tiles: [
+      ["empty","empty","empty","empty","elbow","receiver"],
+      ["empty","empty","empty","empty","line","empty"],
+      ["empty","elbow","line","line","elbow","empty"],
+      ["empty","line","empty","empty","empty","empty"],
+      ["empty","line","empty","empty","empty","empty"],
+      ["source","elbow","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,1,0],
+      [0,0,0,0,1,0],
+      [0,1,0,0,3,0],
+      [0,1,0,0,0,0],
+      [0,1,0,0,0,0],
+      [0,0,0,0,0,0]
+    ],
+    scramble: [[1,5,1],[1,4,2],[1,3,2],[1,2,2],[2,2,1],[3,2,1],[4,2,2],[4,1,2],[4,0,1]]
+  },
+  {
+    id: 35,
+    title: "Inner Cross",
+    goal: "Four branches from a central cross.",
+    width: 7, height: 7,
+    source: [0,3],
+    receivers: [[6,3],[3,0],[3,6]],
+    tiles: [
+      ["empty","empty","empty","receiver","empty","empty","empty"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["source","line","line","cross","line","line","receiver"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","receiver","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,3,2],[2,3,1],[3,1,2],[3,2,2],[3,4,1],[3,5,1],[4,3,1],[5,3,1]]
+  },
+  {
+    id: 36,
+    title: "Weave",
+    goal: "Interleave two paths without crossing.",
+    width: 7, height: 6,
+    source: [0,2],
+    receivers: [[6,1],[6,4]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty","empty"],
+      ["empty","elbow","line","line","line","line","receiver"],
+      ["source","tee","empty","empty","empty","empty","empty"],
+      ["empty","line","empty","empty","empty","empty","empty"],
+      ["empty","elbow","line","line","line","line","receiver"],
+      ["empty","empty","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,1,0,0,0,0,0],
+      [0,3,0,0,0,0,0],
+      [0,1,0,0,0,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,2,2],[1,1,2],[2,1,1],[3,1,1],[4,1,1],[5,1,1],[1,3,2],[1,4,1],[2,4,1],[3,4,1],[4,4,1],[5,4,1]]
+  },
+  {
+    id: 37,
+    title: "Windmill",
+    goal: "Four arms spin out from the hub.",
+    width: 7, height: 7,
+    source: [0,3],
+    receivers: [[6,3],[3,0],[3,6]],
+    tiles: [
+      ["empty","empty","empty","receiver","empty","empty","empty"],
+      ["empty","empty","elbow","line","empty","empty","empty"],
+      ["empty","empty","line","empty","elbow","empty","empty"],
+      ["source","line","cross","empty","cross","line","receiver"],
+      ["empty","empty","elbow","empty","line","empty","empty"],
+      ["empty","empty","empty","line","elbow","empty","empty"],
+      ["empty","empty","empty","receiver","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,1,1,0,0,0],
+      [0,0,1,0,1,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,0,0,1,0,0],
+      [0,0,0,1,3,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,3,1],[2,3,1],[2,1,2],[2,2,2],[3,1,1],[4,2,1],[4,3,1],[4,4,2],[3,5,1],[4,5,2],[5,3,1]]
+  },
+  {
+    id: 38,
+    title: "Double Back",
+    goal: "Two serpentines sharing the same spine.",
+    width: 7, height: 6,
+    source: [0,2],
+    receivers: [[6,1],[6,4]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","line","line","receiver"],
+      ["source","line","cross","empty","empty","empty","empty"],
+      ["empty","empty","line","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","line","line","receiver"],
+      ["empty","empty","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,1,0,0,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,1,0,0,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,2,1],[2,2,2],[2,1,2],[3,1,1],[4,1,1],[5,1,1],[2,3,1],[2,4,1],[3,4,1],[4,4,1],[5,4,1]]
+  },
+  {
+    id: 39,
+    title: "Hex Grid",
+    goal: "Navigate the dense 7×7 layout.",
+    width: 7, height: 7,
+    source: [0,3],
+    receivers: [[6,1],[6,3],[6,5]],
+    tiles: [
+      ["empty","empty","empty","empty","empty","empty","empty"],
+      ["empty","empty","elbow","line","elbow","line","receiver"],
+      ["empty","empty","line","empty","line","empty","empty"],
+      ["source","line","cross","line","cross","line","receiver"],
+      ["empty","empty","line","empty","line","empty","empty"],
+      ["empty","empty","elbow","line","elbow","line","receiver"],
+      ["empty","empty","empty","empty","empty","empty","empty"]
+    ],
+    solution: [
+      [0,0,0,0,0,0,0],
+      [0,0,1,0,2,0,0],
+      [0,0,1,0,1,0,0],
+      [0,0,0,0,0,0,0],
+      [0,0,1,0,1,0,0],
+      [0,0,0,0,2,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,3,2],[2,3,1],[2,1,2],[2,2,2],[3,1,1],[3,3,1],[3,5,2],[4,2,1],[4,3,1],[4,4,2],[4,1,1],[4,5,2],[5,1,1],[5,3,1],[5,5,1],[2,5,1]]
+  },
+  {
+    id: 40,
+    title: "Grand Finale",
+    goal: "The ultimate flow challenge.",
+    width: 7, height: 7,
+    source: [0,3],
+    receivers: [[6,0],[6,3],[6,6]],
+    tiles: [
+      ["empty","empty","empty","elbow","line","line","receiver"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","elbow","line","cross","empty","empty","empty"],
+      ["source","line","line","cross","line","line","receiver"],
+      ["empty","elbow","line","cross","empty","empty","empty"],
+      ["empty","empty","empty","line","empty","empty","empty"],
+      ["empty","empty","empty","elbow","line","line","receiver"]
+    ],
+    solution: [
+      [0,0,0,1,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,1,0,0,0,0,0],
+      [0,0,0,0,0,0,0],
+      [0,1,0,0,0,0,0],
+      [0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,0]
+    ],
+    scramble: [[1,3,2],[2,3,1],[3,0,2],[3,1,2],[3,2,1],[3,3,2],[3,4,1],[3,5,1],[3,6,1],[1,2,2],[2,2,1],[1,4,2],[2,4,1],[4,3,1],[5,3,1],[4,0,1],[5,0,1],[4,6,2],[5,6,1]]
+  }
+];
+
+  </script>
+  <script>
+
+window.Sound = (() => {
+  let enabled = true;
+  let ctx;
+
+  function ensureContext() {
+    if (!ctx) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      ctx = new AudioCtx();
+    }
+    return ctx;
+  }
+
+  function beep(freq = 440, duration = 0.08, type = "sine", volume = 0.03) {
+    if (!enabled) return;
+    const audioCtx = ensureContext();
+    if (!audioCtx) return;
+
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    const now = audioCtx.currentTime;
+    gain.gain.setValueAtTime(volume, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  function rotate() { beep(430, 0.05, "triangle", 0.02); }
+  function hint() { beep(620, 0.08, "sine", 0.025); }
+  function success() {
+    beep(523, 0.08, "triangle", 0.03);
+    setTimeout(() => beep(659, 0.08, "triangle", 0.03), 70);
+    setTimeout(() => beep(784, 0.12, "triangle", 0.03), 140);
+  }
+  function flow() { beep(310, 0.05, "sawtooth", 0.012); }
+
+  return {
+    rotate, hint, success, flow,
+    isEnabled: () => enabled,
+    toggle() { enabled = !enabled; return enabled; }
+  };
+})();
+
+  </script>
+  <script>
+
+(() => {
+  const boardEl = document.getElementById('board');
+  const levelGridEl = document.getElementById('levelGrid');
+  const levelLabelEl = document.getElementById('levelLabel');
+  const levelTitleEl = document.getElementById('levelTitle');
+  const levelGoalEl = document.getElementById('levelGoal');
+  const movesLabelEl = document.getElementById('movesLabel');
+  const bestLabelEl = document.getElementById('bestLabel');
+  const starsLabelEl = document.getElementById('starsLabel');
+  const progressLabelEl = document.getElementById('progressLabel');
+  const toastEl = document.getElementById('toast');
+  const soundBtn = document.getElementById('soundBtn');
+  const winModal = document.getElementById('winModal');
+  const winText = document.getElementById('winText');
+  const starDisplay = document.getElementById('starDisplay');
+
+  const STORAGE_KEY = 'flow_foundry_save_v1';
+  const DIRS = ['up', 'right', 'down', 'left'];
+  const OPP = { up:'down', down:'up', left:'right', right:'left' };
+
+  const PIECES = {
+    empty: [],
+    line: [
+      ['up','down'],
+      ['left','right'],
+      ['up','down'],
+      ['left','right']
+    ],
+    elbow: [
+      ['up','right'],
+      ['right','down'],
+      ['down','left'],
+      ['left','up']
+    ],
+    tee: [
+      ['up','right','left'],
+      ['up','right','down'],
+      ['right','down','left'],
+      ['up','down','left']
+    ],
+    cross: [
+      ['up','right','down','left'],
+      ['up','right','down','left'],
+      ['up','right','down','left'],
+      ['up','right','down','left']
+    ],
+    source: [
+      ['right'],
+      ['down'],
+      ['left'],
+      ['up']
+    ],
+    receiver: [
+      ['left'],
+      ['up'],
+      ['right'],
+      ['down']
+    ]
+  };
+
+  let state = loadSave();
+  let levelIndex = Math.min(state.currentLevel, LEVELS.length - 1);
+  let boardState = [];
+  let startBoardState = [];
+  let undoStack = [];
+  let moveCount = 0;
+  let solved = false;
+  let justRotated = null;
+  let flowAnimating = false;
+
+  function defaultSave() {
+    return {
+      currentLevel: 0,
+      unlocked: 1,
+      bestMoves: {},
+      stars: {},
+      sound: true
+    };
+  }
+
+  function loadSave() {
+    try {
+      return { ...defaultSave(), ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') };
+    } catch {
+      return defaultSave();
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function totalStars() {
+    return Object.values(state.stars).reduce((a,b) => a + b, 0);
+  }
+
+  function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function currentLevel() {
+    return LEVELS[levelIndex];
+  }
+
+  function createInitialBoard(level) {
+    const board = [];
+    for (let y = 0; y < level.height; y++) {
+      const row = [];
+      for (let x = 0; x < level.width; x++) {
+        const type = level.tiles[y][x];
+        let rotation = (level.solution[y][x] || 0) % 4;
+        row.push({ type, rotation, filled: false });
+      }
+      board.push(row);
+    }
+    (level.scramble || []).forEach(([x,y,turns]) => {
+      board[y][x].rotation = (board[y][x].rotation + turns) % 4;
+    });
+    return board;
+  }
+
+  function resetLevel() {
+    boardState = deepClone(startBoardState);
+    undoStack = [];
+    moveCount = 0;
+    solved = false;
+    updateHud();
+    renderBoard();
+    document.getElementById('nextBtn').disabled = true;
+  }
+
+  function loadLevel(index) {
+    levelIndex = index;
+    const level = currentLevel();
+    startBoardState = createInitialBoard(level);
+    boardState = deepClone(startBoardState);
+    undoStack = [];
+    moveCount = 0;
+    solved = false;
+    levelLabelEl.textContent = String(level.id);
+    levelTitleEl.textContent = level.title;
+    levelGoalEl.textContent = level.goal;
+    updateHud();
+    renderLevelButtons();
+    renderBoard();
+    document.getElementById('nextBtn').disabled = true;
+  }
+
+  function connectionsFor(cell) {
+    const defs = PIECES[cell.type] || [];
+    return defs[cell.rotation % 4] || [];
+  }
+
+  function neighbor(x,y,dir) {
+    if (dir === 'up') return [x, y - 1];
+    if (dir === 'right') return [x + 1, y];
+    if (dir === 'down') return [x, y + 1];
+    return [x - 1, y];
+  }
+
+  function inBounds(x,y) {
+    const level = currentLevel();
+    return x >= 0 && y >= 0 && x < level.width && y < level.height;
+  }
+
+  function simulateFlow() {
+    for (const row of boardState) for (const cell of row) cell.filled = false;
+    const level = currentLevel();
+    const queue = [level.source];
+    const visited = new Set();
+    const visitOrder = [];
+    let flowedSteps = 0;
+
+    while (queue.length) {
+      const [x,y] = queue.shift();
+      const key = `${x},${y}`;
+      if (visited.has(key)) continue;
+      visited.add(key);
+      const cell = boardState[y][x];
+      cell.filled = true;
+      visitOrder.push([x, y]);
+      flowedSteps++;
+
+      for (const dir of connectionsFor(cell)) {
+        const [nx, ny] = neighbor(x,y,dir);
+        if (!inBounds(nx,ny)) continue;
+        const target = boardState[ny][nx];
+        const targetConnections = connectionsFor(target);
+        if (!targetConnections.includes(OPP[dir])) continue;
+        queue.push([nx, ny]);
+      }
+    }
+
+    const allReceiversFilled = currentLevel().receivers.every(([x,y]) => boardState[y][x].filled);
+    return { allReceiversFilled, flowedSteps, visitOrder };
+  }
+
+  function updateHud() {
+    movesLabelEl.textContent = String(moveCount);
+    const best = state.bestMoves[currentLevel().id];
+    bestLabelEl.textContent = best ? String(best) : '—';
+    starsLabelEl.textContent = String(totalStars());
+    progressLabelEl.textContent = `${state.unlocked} / ${LEVELS.length} unlocked`;
+  }
+
+  function connectorClass(dir, flowing) {
+    return `connector ${dir} ${flowing ? 'flowing' : ''}`;
+  }
+
+  function renderBoard() {
+    const level = currentLevel();
+    boardEl.innerHTML = '';
+    boardEl.style.gridTemplateColumns = `repeat(${level.width}, var(--tile))`;
+    boardEl.style.gridTemplateRows = `repeat(${level.height}, var(--tile))`;
+
+    simulateFlow();
+
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        const cell = boardState[y][x];
+        const spinning = justRotated && justRotated.x === x && justRotated.y === y;
+        const tile = document.createElement('button');
+        tile.className = `tile ${cell.type !== 'empty' ? '' : 'locked'} ${cell.filled ? 'filled' : ''} ${cell.type}${spinning ? ' spinning' : ''}`;
+        tile.setAttribute('aria-label', `${cell.type} tile ${x},${y}`);
+        tile.disabled = cell.type === 'empty';
+        tile.addEventListener('click', () => rotateTile(x,y));
+
+        const inner = document.createElement('div');
+        inner.className = 'tile-inner';
+
+        const cons = connectionsFor(cell);
+        cons.forEach(dir => {
+          const c = document.createElement('div');
+          c.className = connectorClass(dir, cell.filled);
+          inner.appendChild(c);
+        });
+
+        if (cons.length) {
+          const center = document.createElement('div');
+          center.className = `connector center ${cell.filled ? 'flowing' : ''}`;
+          inner.appendChild(center);
+        }
+
+        if (cell.type === 'source' || cell.type === 'receiver') {
+          const core = document.createElement('div');
+          core.className = 'core';
+          inner.appendChild(core);
+        }
+
+        tile.appendChild(inner);
+        boardEl.appendChild(tile);
+      }
+    }
+  }
+
+  function rotateTile(x,y) {
+    if (solved || flowAnimating) return;
+    const cell = boardState[y][x];
+    if (cell.type === 'empty' || cell.type === 'cross') return;
+    undoStack.push({ x, y, prevRotation: cell.rotation });
+    cell.rotation = (cell.rotation + 1) % 4;
+    moveCount++;
+    justRotated = {x, y};
+    Sound.rotate();
+    updateHud();
+    renderBoard();
+    autoCheckSolved();
+    justRotated = null;
+  }
+
+  function undoMove() {
+    if (solved) return;
+    const lastMove = undoStack.pop();
+    if (!lastMove) {
+      showToast('Nothing to undo yet.');
+      return;
+    }
+    const { x, y, prevRotation } = lastMove;
+    boardState[y][x].rotation = prevRotation;
+    moveCount = Math.max(0, moveCount - 1);
+    updateHud();
+    renderBoard();
+    showToast('Undid last rotation.');
+  }
+
+  function autoCheckSolved() {
+    const result = simulateFlow();
+    renderBoard();
+    if (result.allReceiversFilled) {
+      handleWin();
+    }
+  }
+
+  function computeStars(levelId, moves) {
+    const baseline = estimatePar(LEVELS.find(l => l.id === levelId));
+    if (moves <= baseline) return 3;
+    if (moves <= baseline + 3) return 2;
+    return 1;
+  }
+
+  function estimatePar(level) {
+    return (level.scramble || []).length + Math.ceil((level.width * level.height) / 8);
+  }
+
+  function handleWin() {
+    if (solved) return;
+    solved = true;
+    Sound.success();
+
+    const id = currentLevel().id;
+    const prevBest = state.bestMoves[id];
+    if (!prevBest || moveCount < prevBest) state.bestMoves[id] = moveCount;
+
+    const stars = computeStars(id, moveCount);
+    state.stars[id] = Math.max(state.stars[id] || 0, stars);
+
+    const newlyUnlocked = Math.min(LEVELS.length, Math.max(state.unlocked, levelIndex + 2));
+    state.unlocked = newlyUnlocked;
+    state.currentLevel = Math.max(state.currentLevel, Math.min(levelIndex + 1, LEVELS.length - 1));
+    save();
+
+    updateHud();
+    renderLevelButtons();
+    document.getElementById('nextBtn').disabled = false;
+
+    starDisplay.textContent = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+    winText.textContent = `Solved in ${moveCount} moves.`;
+    winModal.classList.remove('hidden');
+  }
+
+  function renderLevelButtons() {
+    levelGridEl.innerHTML = '';
+    LEVELS.forEach((level, index) => {
+      const btn = document.createElement('button');
+      const unlocked = index < state.unlocked;
+      btn.className = `level-btn ${unlocked ? '' : 'locked'} ${index === levelIndex ? 'active' : ''}`;
+      btn.disabled = !unlocked;
+      const stars = state.stars[level.id] || 0;
+      btn.innerHTML = `${level.id}<span class="mini-stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</span>`;
+      btn.addEventListener('click', () => loadLevel(index));
+      levelGridEl.appendChild(btn);
+    });
+  }
+
+  function showToast(text) {
+    toastEl.textContent = text;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toastEl.classList.remove('show'), 1800);
+  }
+
+  function findHintMove() {
+    const level = currentLevel();
+    for (let y = 0; y < level.height; y++) {
+      for (let x = 0; x < level.width; x++) {
+        const cell = boardState[y][x];
+        if (cell.type === 'empty' || cell.type === 'cross') continue;
+        const targetRot = level.solution[y][x] || 0;
+        if (cell.rotation !== targetRot) return { x, y, targetRot };
+      }
+    }
+    return null;
+  }
+
+  function showHint() {
+    const hint = findHintMove();
+    if (!hint) {
+      showToast('No hint needed here.');
+      return;
+    }
+    Sound.hint();
+    const index = hint.y * currentLevel().width + hint.x;
+    const tile = boardEl.children[index];
+    tile.classList.add('hint');
+    setTimeout(() => tile.classList.remove('hint'), 1800);
+    showToast(`Try rotating tile ${hint.x + 1}, ${hint.y + 1}.`);
+  }
+
+  function animateFlowReveal(visitOrder, onComplete) {
+    flowAnimating = true;
+    const level = currentLevel();
+    const stepDelay = Math.max(18, Math.min(55, 550 / visitOrder.length));
+
+    for (const row of boardState) for (const cell of row) cell.filled = false;
+    Array.from(boardEl.children).forEach(el => {
+      el.classList.remove('filled', 'flow-reveal');
+      el.querySelectorAll('.connector').forEach(c => c.classList.remove('flowing'));
+    });
+
+    visitOrder.forEach(([x, y], i) => {
+      setTimeout(() => {
+        boardState[y][x].filled = true;
+        const tileEl = boardEl.children[y * level.width + x];
+        if (tileEl) {
+          tileEl.classList.add('filled', 'flow-reveal');
+          tileEl.querySelectorAll('.connector').forEach(c => c.classList.add('flowing'));
+          setTimeout(() => tileEl.classList.remove('flow-reveal'), 400);
+        }
+        if (i === visitOrder.length - 1) {
+          setTimeout(() => { flowAnimating = false; onComplete(); }, 120);
+        }
+      }, i * stepDelay);
+    });
+  }
+
+  function testFlow() {
+    if (flowAnimating) return;
+    const result = simulateFlow();
+    Sound.flow();
+    if (result.allReceiversFilled) {
+      animateFlowReveal(result.visitOrder, () => handleWin());
+    } else {
+      animateFlowReveal(result.visitOrder, () => {
+        showToast('Flow incomplete. Keep tuning the system.');
+      });
+    }
+  }
+
+  document.getElementById('resetBtn').addEventListener('click', resetLevel);
+  document.getElementById('hintBtn').addEventListener('click', showHint);
+  document.getElementById('undoBtn').addEventListener('click', undoMove);
+  document.getElementById('playFlowBtn').addEventListener('click', testFlow);
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (levelIndex + 1 < state.unlocked && levelIndex + 1 < LEVELS.length) {
+      loadLevel(Math.min(levelIndex + 1, LEVELS.length - 1));
+    }
+  });
+
+  document.getElementById('winReplayBtn').addEventListener('click', () => {
+    winModal.classList.add('hidden');
+    resetLevel();
+  });
+
+  document.getElementById('winNextBtn').addEventListener('click', () => {
+    winModal.classList.add('hidden');
+    if (levelIndex + 1 < LEVELS.length) {
+      loadLevel(Math.min(levelIndex + 1, LEVELS.length - 1));
+    } else {
+      showToast('All levels complete. Add more content next.');
+    }
+  });
+
+  soundBtn.addEventListener('click', () => {
+    const on = Sound.toggle();
+    state.sound = on;
+    save();
+    soundBtn.textContent = on ? '🔊' : '🔇';
+  });
+
+  if (state.sound === false) {
+    Sound.toggle();
+  }
+  soundBtn.textContent = state.sound === false ? '🔇' : '🔊';
+  
+  document.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+    if (key === 'u') undoMove();
+    if (key === 'r') resetLevel();
+    if (key === 'h') showHint();
+    if (key === 't') testFlow();
+    if (key === 'n') {
+      const nextBtn = document.getElementById('nextBtn');
+      if (!nextBtn.disabled) nextBtn.click();
+    }
+  });
+
+  // Mobile: prevent page scroll when touching a rotatable tile
+  boardEl.addEventListener('touchstart', e => {
+    if (e.target.closest('button.tile:not([disabled])')) e.preventDefault();
+  }, { passive: false });
+
+  loadLevel(levelIndex);
+})();
+
+  </script>
 </body>
 </html>
